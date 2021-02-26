@@ -1,6 +1,30 @@
 import logging
-from typing import Type
+from logging.config import dictConfig
 import simpy
+
+
+dictConfig({
+    "version":1.0,
+    "formatters":{
+        "simple":{
+            "format":"(%(asctime)s) %(message)s",
+            "datefmt":"%H:%M:%S"
+        }
+    },
+    "handlers":{
+        "console":{
+            "class": "logging.StreamHandler",
+            "formatter":"simple",
+            "level":logging.DEBUG
+        }
+    },
+    "loggers":{
+        "SimFactory":{
+            "handlers":["console"],
+            "level":logging.DEBUG
+        }
+    }
+})
 
 class SimLoggerAdapter(logging.LoggerAdapter):
 
@@ -17,9 +41,5 @@ class SimLoggerAdapter(logging.LoggerAdapter):
 
     def process(self, msg, kwargs):
         env:simpy.Environment = self.extra["env"]
-        return "[%s] %s" % (env.now, msg), kwargs
+        return f"[{env.now*60:.3f}] {msg}", kwargs
 
-
-log = logging.getLogger()
-adapter = SimLoggerAdapter(log, {"env":simpy.Environment()})
-adapter.debug("hello")
