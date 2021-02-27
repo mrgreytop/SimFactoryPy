@@ -1,4 +1,6 @@
 import sys
+
+from simpy.exceptions import Interrupt
 sys.path.append("../..")
 from SimFactoryPy.simulation.Loggers import SimLoggerAdapter
 import logging
@@ -10,6 +12,8 @@ log = logging.getLogger("SimFactory")
 class ConveyorBelt():
     
     def __init__(self, env, length:int, rate:int, initial:int = 0):
+        if length <= 0:
+            raise ValueError("Belt is too short")
 
         self.env = env
         self.log = SimLoggerAdapter(log, {"env":self.env})
@@ -19,12 +23,18 @@ class ConveyorBelt():
         self.store = simpy.Store(self.env, capacity=length)
 
     def traverse(self, item):
-        yield self.env.timeout(self.period)
-        self.store.put(item)
+        try:
+            yield self.env.timeout(self.period)
+            self.store.put(item)
+        except Interrupt:
+            pass
 
     def put(self, item):
         yield self.env.timeout(1/self.rate)
-        self.env.process(self.traverse(item))
+        p = self.env.process(self.traverse(item))
+        if len(self.store.items) >= self.store.capacity:
+            p.interrupt()
+            raise Interrupt("Belt is full")
     
     def get(self):
         p_get = self.store.get()

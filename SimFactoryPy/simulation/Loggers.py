@@ -40,7 +40,7 @@ class SimLoggerAdapter(logging.LoggerAdapter):
 
     def process(self, msg, kwargs):
         env:simpy.Environment = self.extra["env"]
-        return f"{env.now*60:.3f}: {msg}", kwargs
+        return f"{env.now:.3f}: {msg}", kwargs
 
 def parse_env_time(message):
     return float(message.split(":")[0])

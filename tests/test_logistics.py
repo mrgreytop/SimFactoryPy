@@ -1,19 +1,22 @@
-import unittest
 import simpy
+from simpy.exceptions import Interrupt
 import sys
 import numpy as np
 
 sys.path.append("..")
 from SimFactoryPy.simulation import Logistics
-from SimFactoryPy.simulation.Loggers import SimLoggerAdapter, parse_env_time
-import logging
+from SimFactoryPy.simulation.Loggers import parse_env_time
+from base import BaseSimTest
 
 
 
 def producer(env:simpy.Environment, 
     belt:Logistics.ConveyorBelt, log):
     while True:
-        yield env.process(belt.put(("ore", env.now)))
+        try:
+            yield env.process(belt.put(("ore", env.now)))
+        except Interrupt:
+            pass
 
 def receiver(env:simpy.Environment,
     belt:Logistics.ConveyorBelt, log):
@@ -23,14 +26,7 @@ def receiver(env:simpy.Environment,
     
     
 
-class TestConveyorBelt(unittest.TestCase):
-
-    def setUp(self) -> None:
-        self.env = simpy.Environment()
-        self.log = logging.getLogger("SimFactory")
-        self.sim_log = SimLoggerAdapter(self.log, {"env":self.env})
-        
-        return super().setUp()
+class TestConveyorBelt(BaseSimTest):
 
     def test_put_speed(self):
         belt_speed = 120
@@ -93,3 +89,18 @@ class TestConveyorBelt(unittest.TestCase):
             all(step_diff >= (1/belt_speed))
         )
 
+    def test_put_execption(self):
+        belt_speed = 120
+        belt = Logistics.ConveyorBelt(
+            self.env, 1, belt_speed
+        )
+        
+        def do_put():
+            while True:
+                yield self.env.process(belt.put("item"))
+
+        self.env.process(do_put())
+
+        with self.assertRaises(simpy.exceptions.Interrupt):
+            # must raise exception as soon as conveyor is full
+            self.env.run(1/belt_speed + 1/60)
