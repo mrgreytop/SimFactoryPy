@@ -3,41 +3,31 @@ sys.path.append("../..")
 from SimFactoryPy.simulation.Loggers import SimLoggerAdapter
 import logging
 import simpy
-import typing
 
 log = logging.getLogger("SimFactory")
 
+
 class ConveyorBelt():
     
-    def __init__(self, env, 
-        length:int, rate:int, input:simpy.Store, output:simpy.Store):
+    def __init__(self, env, length:int, rate:int, initial:int = 0):
 
         self.env = env
         self.log = SimLoggerAdapter(log, {"env":self.env})
-        self.input = input
-        self.output = output
-        self.period = 1/rate
+        self.rate = rate
+        self.period = length/self.rate
 
-        self.on_belt = simpy.Store(self.env, capacity=length)
+        self.store = simpy.Store(self.env, capacity=length)
 
-        self.env.process(self.run())
+    def traverse(self, item):
+        yield self.env.timeout(self.period)
+        self.store.put(item)
 
-    def run(self):
-        yield (
-            self.env.process(self.get()) &
-            self.env.process(self.put())
-        )
-
+    def put(self, item):
+        yield self.env.timeout(1/self.rate)
+        self.env.process(self.traverse(item))
+    
     def get(self):
-        while True:
-            self.log.info("getting")
-            yield self.input.get()
-            yield self.env.timeout(self.period)
-
-
-    def put(self):
-        while True:
-            # TODO add time onto period to allow item to traverse the belt
-            yield self.env.timeout(self.period)
-            self.log.info("putting")
-            yield self.output.put(self.on_belt.get())
+        p_get = self.store.get()
+        p_time = self.env.timeout(1/self.rate)
+        condvalue = yield (p_get & p_time)
+        return condvalue[p_get]
