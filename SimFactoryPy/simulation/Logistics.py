@@ -11,7 +11,7 @@ log = logging.getLogger("SimFactory")
 
 class ConveyorBelt():
     
-    def __init__(self, env, length:int, rate:int, initial:int = 0):
+    def __init__(self, env, length:int, rate:int):
         if length <= 0:
             raise ValueError("Belt is too short")
 
