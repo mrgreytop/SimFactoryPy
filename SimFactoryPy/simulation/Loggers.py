@@ -21,6 +21,10 @@ dictConfig({
         "SimFactory":{
             "handlers":["console"],
             "level":logging.DEBUG
+        },
+        "TestLogger":{
+            "handlers":["console"],
+            "level":logging.DEBUG
         }
     }
 })

@@ -18,26 +18,26 @@ class ConveyorBelt():
         self.env = env
         self.log = SimLoggerAdapter(log, {"env":self.env})
         self.rate = rate
-        self.period = length/self.rate
+        self.period = 1/self.rate
+        self.traverse_period = length*self.period
 
         self.store = simpy.Store(self.env, capacity=length)
 
     def traverse(self, item):
         try:
-            yield self.env.timeout(self.period)
+            self.env.timeout(self.traverse_period)
             self.store.put(item)
         except Interrupt:
             pass
 
     def put(self, item):
-        yield self.env.timeout(1/self.rate)
-        p = self.env.process(self.traverse(item))
-        if len(self.store.items) >= self.store.capacity:
-            p.interrupt()
-            raise Interrupt("Belt is full")
+        self.log.info("putting item on conveyor")
+        self.traverse(item)
+        return self.env.timeout(self.period)
     
     def get(self):
+        self.log.info("getting item from conveyor")
         p_get = self.store.get()
-        p_time = self.env.timeout(1/self.rate)
+        p_time = self.env.timeout(self.period)
         condvalue = yield (p_get & p_time)
         return condvalue[p_get]
