@@ -14,10 +14,7 @@ log = logging.getLogger("TestLogger")
 
 def producer(env:simpy.Environment, belt:Logistics.ConveyorBelt):
     while True:
-        try:
-            yield belt.put(env.now)
-        except Interrupt:
-            pass
+        yield belt.put(env.now)
 
 def receiver(env:simpy.Environment,belt:Logistics.ConveyorBelt):
     while True:
