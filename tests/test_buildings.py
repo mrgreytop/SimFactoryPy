@@ -1,8 +1,9 @@
+from unittest.case import expectedFailure
 import numpy as np
 import sys
 sys.path.append("..")
 from SimFactoryPy.simulation.Logistics import ConveyorBelt
-from SimFactoryPy.simulation.Buildings import Miner
+from SimFactoryPy.simulation.Buildings import Miner, Constructor
 from SimFactoryPy.simulation.Resources import Item
 from tests.base import BaseSimTest, DP
 
@@ -57,3 +58,32 @@ class TestMiner(BaseSimTest):
             self.env.run(run_time)
 
         self.assertEqual(len(belt.store.items), run_time * belt_rate)
+
+class TestConstructor(BaseSimTest):
+
+    def test_stacks(self):
+        ore = Item("ore",100)
+        bar = Item("bar",100)
+        recipe = {"in":(ore, 3), "out":(bar,2)}
+        run_time = 1
+        in_rate = 12
+        out_rate = 8
+
+        in_belt = ConveyorBelt(self.env, 1, in_rate)
+        c = Constructor(
+            self.env, 
+            out_rate = out_rate,
+            in_belt=in_belt, 
+            recipe=recipe,
+            out_belt=None
+        )
+        m = Miner(self.env, ore, in_rate, belt = in_belt)
+
+        with self.assertLogs("SimFactory") as cm:
+            self.env.run(run_time)
+
+        constructor_msgs = [r.message for r in cm.records if "Constructor" in r.message]
+        print("\n".join(constructor_msgs))
+
+        expected_output = 4
+        self.assertAlmostEqual(c.out_stack.level, expected_output, 3)

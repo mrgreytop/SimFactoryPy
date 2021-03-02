@@ -1,4 +1,5 @@
 import simpy
+from simpy.events import AllOf
 from simpy.exceptions import Interrupt
 from .Resources import Item
 from .Logistics import ConveyorBelt
@@ -21,7 +22,8 @@ class Miner():
         item:Item, rate, belt:ConveyorBelt = None):
 
         self.env = env
-        self.log = SimLoggerAdapter(log, {"env":self.env})
+        self.log = SimLoggerAdapter(
+            log, {"env":self.env, "object":"Miner"})
 
         self.item = item
         self.period = 1/rate
@@ -44,7 +46,7 @@ class Miner():
             else:
                 put = self.output_stack.put(1)
 
-            self.log.info(f"wating: {self.period:.3f}")
+            self.log.info(f"mining {self.item}")
             yield (self.env.timeout(self.period) & put)
 
 
@@ -60,8 +62,8 @@ class Constructor():
     """
 
     def __init__(self, env : simpy.Environment, 
-        out_rate : float, in_belt:ConveyorBelt, out_belt:ConveyorBelt,
-        recipe:dict):
+        out_rate : float, in_belt:ConveyorBelt, recipe:dict,
+        out_belt:ConveyorBelt = None):
         
         self.env = env
         self.recipe = recipe
@@ -76,29 +78,54 @@ class Constructor():
             self.env, capacity = self.recipe["in"][0].stack_cap
         )
 
-        self.period = 1/out_rate
-        self.log = SimLoggerAdapter(log, {"env":self.env})
+        self.period = self.recipe["out"][1]/out_rate
+        self.log = SimLoggerAdapter(
+            log, {"env":self.env, "object":"Constructor"})
+
+        self.env.process(self.run())
 
     def run(self):
+        self.env.process(self.input())
         while True:
-
-            self.env.process(self.produce())
-
+            self.log.info("allocating item space")
+            yield self.allocate_inputs()
+            self.log.info("producing item")
+            yield self.env.timeout(self.period)
+            self.log.info("produced items")
+            yield AllOf(self.env, self.output(self.recipe["out"][1]))
+            self.log.info("output items")
 
     def input(self):
         while True:
-            yield
+            item:Item = yield self.env.process(self.in_belt.get())
+            self.log.info(f"fetched {item}")
+            yield self.in_stack.put(1)
+            self.log.info(f"put 1 {item} on input stack")
 
-    def produce(self):
-        yield self.env.timeout(self.period)
-        for _ in range(self.recipe["out"][1]):
-            yield self.output()
 
-    def output(self):
-        if len(self.out_belt.store.items) < self.out_belt.store.capacity:
-            return self.out_belt.put(self.recipe["out"][0])
-        else:
-            return self.out_stack.put(self.recipe["out"][0])
+    def allocate_inputs(self)->AllOf:
+        gets = [self.in_stack.get(self.recipe["in"][1])]
+        return AllOf(self.env, gets)
+
+
+    def output(self, amount)->list:
+        puts = []
+        if (self.out_belt != None): 
+            for _ in range(amount):
+                if len(self.out_belt.store.items) < self.out_belt.store.capacity:
+                    puts.append(
+                        self.out_belt.put(self.recipe["out"][0])
+                    )
+                else:
+                    break
+
+        overflow = amount - len(puts)
+        if overflow > 0:
+            puts.append(
+                self.out_stack.put(overflow)
+            )
+
+        return puts
 
         
 
