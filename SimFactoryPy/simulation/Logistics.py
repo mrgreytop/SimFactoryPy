@@ -1,3 +1,4 @@
+from typing import List
 from SimFactoryPy.simulation.Resources import MonitorStore
 from simpy.exceptions import Interrupt
 from .Loggers import SimLoggerAdapter
@@ -69,4 +70,27 @@ class Splitter():
             self.log.info(f"put item on belt {i}")
             i+=1
             i%=len(self.out_belts)
-            
+
+
+class Merger():
+
+    def __init__(self, env, out_belt:ConveyorBelt, in_belts:list):
+        if len(in_belts > 3):
+            raise ValueError("Must have less than 3 input belts")
+        elif len(in_belts < 1):
+            raise ValueError("Must have at least one input belt")
+
+        self.in_belts = in_belts
+        self.out_belt = out_belt
+        self.env = env
+        self.log = SimLoggerAdapter(log, {"env":self.env, "object":"Merger"})
+
+        self.env.process(self.run())
+
+    def run(self):
+        i = 0
+        while True:
+            item = yield self.env.process(self.in_belts[i].get())
+            self.out_belt.put(item)
+            i+=1
+            i%=len(self.in_belts)
