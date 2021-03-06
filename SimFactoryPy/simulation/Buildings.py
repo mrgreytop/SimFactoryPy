@@ -1,7 +1,7 @@
 import simpy
 from simpy.events import AllOf
 from simpy.exceptions import Interrupt
-from .Resources import Item
+from .Resources import Item, MonitorContainer
 from .Logistics import ConveyorBelt
 from .Loggers import SimLoggerAdapter
 import logging
@@ -29,7 +29,8 @@ class Miner():
         self.period = 1/rate
         self.belt = belt
 
-        self.output_stack = simpy.Container(self.env, capacity=item.stack_cap)
+        self.output_stack = MonitorContainer(self.env, 
+            capacity=item.stack_cap, parent = "Miner")
 
         self.env.process(self.run())
 
@@ -71,11 +72,13 @@ class Constructor():
         self.in_belt = in_belt
         self.out_belt = out_belt
 
-        self.out_stack = simpy.Container(
-            self.env, capacity = self.recipe["out"][0].stack_cap
+        self.out_stack = MonitorContainer(
+            self.env, capacity = self.recipe["out"][0].stack_cap,
+            parent = "Constructor Out"
         )
-        self.in_stack = simpy.Container(
-            self.env, capacity = self.recipe["in"][0].stack_cap
+        self.in_stack = MonitorContainer(
+            self.env, capacity = self.recipe["in"][0].stack_cap,
+            parent = "Constructor In"
         )
 
         self.period = self.recipe["out"][1]/out_rate
@@ -127,5 +130,5 @@ class Constructor():
 
         return puts
 
-        
+
 

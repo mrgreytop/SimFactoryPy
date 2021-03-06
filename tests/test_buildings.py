@@ -6,6 +6,8 @@ from SimFactoryPy.simulation.Logistics import ConveyorBelt
 from SimFactoryPy.simulation.Buildings import Miner, Constructor
 from SimFactoryPy.simulation.Resources import Item
 from tests.base import BaseSimTest, DP
+from tabulate import tabulate
+
 
 class TestMiner(BaseSimTest):
 
@@ -16,8 +18,12 @@ class TestMiner(BaseSimTest):
         with self.assertLogs("SimFactory"):
             self.env.run(1)
 
+        
+        # print("\n", tabulate(m.output_stack.data, headers = "keys"), sep="")
+
         self.assertEqual(m.output_stack.level, item_stack)
         self.assertEqual(len(m.output_stack.put_queue), 0)
+
 
     def test_out_speed(self):
     
@@ -82,8 +88,16 @@ class TestConstructor(BaseSimTest):
         with self.assertLogs("SimFactory") as cm:
             self.env.run(run_time)
 
-        constructor_msgs = [r.message for r in cm.records if "Constructor" in r.message]
-        print("\n".join(constructor_msgs))
+
+        put_gets = [
+            *c.out_stack.data, 
+            *c.in_stack.data, 
+            # *m.output_stack.data, 
+            # *in_belt.store.data
+        ]
+        put_gets.sort(key = lambda el: el["End Time"])
+        print(tabulate(put_gets, headers = "keys"))
+        
 
         expected_output = 4
         self.assertAlmostEqual(c.out_stack.level, expected_output, 3)
