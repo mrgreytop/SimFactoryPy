@@ -1,8 +1,6 @@
-import sys
-
+from SimFactoryPy.simulation.Resources import MonitorStore
 from simpy.exceptions import Interrupt
-sys.path.append("../..")
-from SimFactoryPy.simulation.Loggers import SimLoggerAdapter
+from .Loggers import SimLoggerAdapter
 import logging
 import simpy
 
@@ -11,18 +9,18 @@ log = logging.getLogger("SimFactory")
 
 class ConveyorBelt():
     
-    def __init__(self, env, length:int, rate:int):
+    def __init__(self, env, length:int, rate:int, name="Belt"):
         if length <= 0:
             raise ValueError("Belt is too short")
 
         self.env = env
         self.log = SimLoggerAdapter(
-            log, {"env":self.env, "object":"Belt"})
+            log, {"env":self.env, "object":name})
         self.rate = rate
         self.period = 1/self.rate
-        self.traverse_period = length*self.period
+        self.traverse_period = (length-1)*self.period
 
-        self.store = simpy.Store(self.env, capacity=length)
+        self.store = MonitorStore(self.env, capacity=length, parent = name)
 
     def traverse(self, item):
         try:
@@ -46,7 +44,7 @@ class ConveyorBelt():
 
 
 class Splitter():
-    
+
     def __init__(self, env:simpy.Environment, in_belt:ConveyorBelt, out_belts:list):
         if len(out_belts) > 3:
             raise ValueError("The number of output belts must be 3 or less")
@@ -55,13 +53,20 @@ class Splitter():
 
         self.in_belt = in_belt
         self.out_belts = out_belts
-
-        self.store = simpy.Store(env, capacity = 1)
+        self.env = env
+        self.log = SimLoggerAdapter(log, {"env":self.env, "object":"Splitter"})
 
         self.env.process(self.run())
 
     def run(self):
+        i = 0
         while True:
-            for belt in self.out_belts:
-                item = yield self.env.process(self.in_belt.get())
-                yield belt.put(item)
+            self.log.info("getting item from input belt")
+            item = yield self.env.process(self.in_belt.get())
+            self.log.info("got item from input belt")
+            self.log.info(f"putting item on belt {i}")
+            self.out_belts[i].put(item)
+            self.log.info(f"put item on belt {i}")
+            i+=1
+            i%=len(self.out_belts)
+            

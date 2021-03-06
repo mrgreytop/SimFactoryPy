@@ -8,13 +8,14 @@ sys.path.append("..")
 from SimFactoryPy.simulation import Logistics
 from SimFactoryPy.simulation.Loggers import parse_env_time
 from base import BaseSimTest
+from tabulate import tabulate
 
 
 log = logging.getLogger("TestLogger")
 
 def producer(env:simpy.Environment, belt:Logistics.ConveyorBelt):
     while True:
-        yield belt.put(env.now)
+        yield belt.put("ore")
 
 def receiver(env:simpy.Environment,belt:Logistics.ConveyorBelt):
     while True:
@@ -54,8 +55,6 @@ class TestConveyorBelt(BaseSimTest):
         
         np.testing.assert_array_almost_equal(times,expectedTimes)
 
-        
-
     def test_get_speed(self):
         belt_speed = 60
         run_time = 1
@@ -74,3 +73,66 @@ class TestConveyorBelt(BaseSimTest):
 
         expectedItems = belt.store.capacity - belt_speed * run_time
         self.assertEqual(len(belt.store.items),expectedItems)
+
+
+class TestSplitter(BaseSimTest):
+
+    def test_2_belts(self):
+        out_rate = in_rate = 10
+        run_time = 1
+
+        capacities = [(in_rate, "in"),(out_rate, "out1"),(out_rate,"out2")]
+        in_belt, *out_belts = [
+            Logistics.ConveyorBelt(self.env,cap,in_rate, name = name)
+            for cap,name in capacities
+        ]
+        
+        s = Logistics.Splitter(self.env, in_belt, out_belts)
+
+        self.env.process(producer(self.env, in_belt))
+
+        with self.assertLogs("SimFactory"):
+            self.env.run(run_time)
+
+        out_belt_levels = [b.store.level for b in out_belts]
+
+        perfect_split = run_time*in_rate/2
+        
+
+        if perfect_split % 1 != 0:
+            split = [np.ceil(perfect_split), np.floor(perfect_split)]
+        else:
+            split = [perfect_split] * 2
+            
+        self.assertSequenceEqual(split, out_belt_levels)
+    
+    def test_3_belts(self):
+        out_rate = in_rate = 10
+        run_time = 1
+
+        capacities = [(in_rate, "in"),(out_rate, "out1"),(out_rate,"out2"),(out_rate,"out3")]
+        in_belt, *out_belts = [
+            Logistics.ConveyorBelt(self.env,cap,in_rate, name = name)
+            for cap,name in capacities
+        ]
+        
+        s = Logistics.Splitter(self.env, in_belt, out_belts)
+
+        self.env.process(producer(self.env, in_belt))
+
+        with self.assertLogs("SimFactory"):
+            self.env.run(run_time)
+
+        out_belt_levels = [b.store.level for b in out_belts]
+
+        produced_items = run_time*in_rate
+        remainder = produced_items % 3
+        perfect_split = produced_items // 3
+        if remainder == 2:
+            split = [perfect_split+1, perfect_split+1, perfect_split]
+        elif remainder == 1:
+            split = [perfect_split+1, perfect_split, perfect_split]
+        else:
+            split = [perfect_split]*3
+                    
+        self.assertSequenceEqual(split, out_belt_levels)
