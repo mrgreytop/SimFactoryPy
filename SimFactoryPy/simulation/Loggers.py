@@ -45,9 +45,9 @@ class SimLoggerAdapter(logging.LoggerAdapter):
 
     def process(self, msg, kwargs)->tuple:
         if self.object == None:
-            return f"{self.env.now:.3f}: {msg}", kwargs
+            return f"{self.env.now}: {msg}", kwargs
         else:
-            return f"{self.env.now:.3f}: {self.object}: {msg}", kwargs
+            return f"{self.env.now}: {self.object}: {msg}", kwargs
             
 
 def parse_env_time(message):

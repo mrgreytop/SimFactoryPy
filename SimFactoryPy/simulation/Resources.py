@@ -1,3 +1,4 @@
+from fractions import Fraction
 import simpy
 
 class Item():
@@ -11,6 +12,22 @@ class Item():
     def __str__(self):
         return self.name
 
+    def __hash__(self):
+        return hash((self.name, self.stack_cap))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+def Recipe(recipe_dict):
+    recipe_dict["out"] = [
+        (item,Fraction(ratio))
+        for item, ratio in recipe_dict["out"]
+    ]
+    recipe_dict["in"] = [
+        (item,Fraction(ratio))
+        for item,ratio in recipe_dict["in"]
+    ]
+    return recipe_dict
 
 class MonitorContainer(simpy.Container):
 

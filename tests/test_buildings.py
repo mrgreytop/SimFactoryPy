@@ -4,7 +4,7 @@ import sys
 sys.path.append("..")
 from SimFactoryPy.simulation.Logistics import ConveyorBelt
 from SimFactoryPy.simulation.Buildings import Miner, Constructor
-from SimFactoryPy.simulation.Resources import Item
+from SimFactoryPy.simulation.Resources import Item, Recipe
 from tests.base import BaseSimTest, DP
 from tabulate import tabulate
 
@@ -33,10 +33,10 @@ class TestMiner(BaseSimTest):
 
         with self.assertLogs("SimFactory") as cm:
             self.env.run(run_time)
-
-        self.assertAlmostEqual(
-            m.output_stack.level, run_time * miner_rate,
-            places = -1
+        
+        # print(tabulate(m.output_stack.data, headers="keys"))
+        self.assertEqual(
+            m.output_stack.level, run_time * miner_rate
         )
 
     def test_fast_conveyor(self):
@@ -70,7 +70,7 @@ class TestConstructor(BaseSimTest):
     def test_stacks(self):
         ore = Item("ore",100)
         bar = Item("bar",100)
-        recipe = {"in":(ore, 3), "out":(bar,2)}
+        recipe = Recipe({"in":[(ore, 3)], "out":[(bar,2)]})
         run_time = 1
         in_rate = 12
         out_rate = 8
@@ -87,17 +87,7 @@ class TestConstructor(BaseSimTest):
 
         with self.assertLogs("SimFactory") as cm:
             self.env.run(run_time)
-
-
-        put_gets = [
-            *c.out_stack.data, 
-            *c.in_stack.data, 
-            # *m.output_stack.data, 
-            # *in_belt.store.data
-        ]
-        put_gets.sort(key = lambda el: el["End Time"])
-        print(tabulate(put_gets, headers = "keys"))
         
 
         expected_output = 4
-        self.assertAlmostEqual(c.out_stack.level, expected_output, 3)
+        self.assertEqual(c.out_stack.level, expected_output)

@@ -1,3 +1,4 @@
+from fractions import Fraction
 from typing import List
 from SimFactoryPy.simulation.Resources import MonitorStore
 from simpy.exceptions import Interrupt
@@ -18,7 +19,7 @@ class ConveyorBelt():
         self.log = SimLoggerAdapter(
             log, {"env":self.env, "object":name})
         self.rate = rate
-        self.period = 1/self.rate
+        self.period = Fraction(1,self.rate)
         self.traverse_period = (length-1)*self.period
 
         self.store = MonitorStore(self.env, capacity=length, parent = name)

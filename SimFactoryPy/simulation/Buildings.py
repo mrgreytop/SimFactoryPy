@@ -5,6 +5,8 @@ from .Resources import Item, MonitorContainer
 from .Logistics import ConveyorBelt
 from .Loggers import SimLoggerAdapter
 import logging
+from fractions import Fraction
+
 
 log = logging.getLogger("SimFactory")
 
@@ -26,7 +28,7 @@ class Miner():
             log, {"env":self.env, "object":"Miner"})
 
         self.item = item
-        self.period = 1/rate
+        self.period = Fraction(1,rate)
         self.belt = belt
 
         self.output_stack = MonitorContainer(self.env, 
@@ -73,15 +75,15 @@ class Constructor():
         self.out_belt = out_belt
 
         self.out_stack = MonitorContainer(
-            self.env, capacity = self.recipe["out"][0].stack_cap,
+            self.env, capacity = self.recipe["out"][0][0].stack_cap,
             parent = "Constructor Out"
         )
         self.in_stack = MonitorContainer(
-            self.env, capacity = self.recipe["in"][0].stack_cap,
+            self.env, capacity = self.recipe["in"][0][0].stack_cap,
             parent = "Constructor In"
         )
 
-        self.period = self.recipe["out"][1]/out_rate
+        self.period = Fraction(self.recipe["out"][0][1],out_rate)
         self.log = SimLoggerAdapter(
             log, {"env":self.env, "object":"Constructor"})
 
@@ -95,7 +97,7 @@ class Constructor():
             self.log.info("producing item")
             yield self.env.timeout(self.period)
             self.log.info("produced items")
-            yield AllOf(self.env, self.output(self.recipe["out"][1]))
+            yield AllOf(self.env, self.output(self.recipe["out"][0][1]))
             self.log.info("output items")
 
     def input(self):
@@ -107,7 +109,7 @@ class Constructor():
 
 
     def allocate_inputs(self)->AllOf:
-        gets = [self.in_stack.get(self.recipe["in"][1])]
+        gets = [self.in_stack.get(self.recipe["in"][0][1])]
         return AllOf(self.env, gets)
 
 
@@ -117,7 +119,7 @@ class Constructor():
             for _ in range(amount):
                 if len(self.out_belt.store.items) < self.out_belt.store.capacity:
                     puts.append(
-                        self.out_belt.put(self.recipe["out"][0])
+                        self.out_belt.put(self.recipe["out"][0][0])
                     )
                 else:
                     break
