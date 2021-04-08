@@ -1,5 +1,6 @@
 from fractions import Fraction
 import simpy
+from simpy.rt import RealtimeEnvironment
 
 class Item():
     def __init__(self, name, stack_cap):
@@ -18,6 +19,7 @@ class Item():
     def __eq__(self, other):
         return hash(self) == hash(other)
 
+
 def Recipe(recipe_dict):
     recipe_dict["out"] = [
         (item,Fraction(ratio))
@@ -29,6 +31,7 @@ def Recipe(recipe_dict):
     ]
     return recipe_dict
 
+
 class MonitorContainer(simpy.Container):
 
     def __init__(self, env: simpy.Environment, capacity: int = 0, 
@@ -37,7 +40,6 @@ class MonitorContainer(simpy.Container):
         self.parent = parent
         self.data = []
         super().__init__(env, capacity=capacity, init=init)
-
 
     def monitor(self):
         time = self._env.now
