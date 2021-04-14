@@ -1,0 +1,31 @@
+{
+	"Iron Plate": {
+		"ingredients": {
+			"Iron Ingot": 3
+		},
+		"products": {
+			"Iron Plate": 2
+		},
+		"building": "Constructor"
+	},
+	"Coated Iron Plate": {
+		"ingredients": {
+			"Iron Ingot": 10,
+			"Plastic": 2
+		},
+		"products": {
+			"Iron Plate": 15
+		},
+		"building": "Assembler"
+	},
+	"Steel Coated Plate": {
+		"ingredients": {
+			"Steel Ingot": 3,
+			"Plastic": 2
+		},
+		"products": {
+			"Iron Plate": 18
+		},
+		"building": "Assembler"
+	}
+}

@@ -1,0 +1,42 @@
+{
+	"Steel Ingot": {
+		"ingredients": {
+			"Iron Ore": 3,
+			"Coal": 3
+		},
+		"products": {
+			"Steel Ingot": 3
+		},
+		"building": "Foundry"
+	},
+	"Coke Steel Ingot": {
+		"ingredients": {
+			"Iron Ore": 15,
+			"Petroleum Coke": 15
+		},
+		"products": {
+			"Steel Ingot": 20
+		},
+		"building": "Foundry"
+	},
+	"Compacted Steel Ingot": {
+		"ingredients": {
+			"Iron Ore": 6,
+			"Compacted Coal": 3
+		},
+		"products": {
+			"Steel Ingot": 10
+		},
+		"building": "Foundry"
+	},
+	"Solid Steel Ingot": {
+		"ingredients": {
+			"Iron Ingot": 2,
+			"Coal": 2
+		},
+		"products": {
+			"Steel Ingot": 3
+		},
+		"building": "Foundry"
+	}
+}

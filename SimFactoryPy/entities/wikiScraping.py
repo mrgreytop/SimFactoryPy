@@ -3,7 +3,7 @@ import bs4
 
 
 def parse_ingredient_cell(cell : bs4.Tag) -> tuple:
-    if str(cell.string) == "&nbsp;":
+    if str(cell.string) == u"\u00A0":
         return None
     
     ing_contents = cell.contents[0].div.contents
@@ -19,10 +19,9 @@ def parse_ingredient_cell(cell : bs4.Tag) -> tuple:
 
 def find_recipes(soup: BeautifulSoup) -> dict:
     table : bs4.PageElement = soup.find("table", class_ = "wikitable")
-    recipe_rows = (
-        r for r in table.tbody.children
-        if r.attrs.get("class") == ["firstRow"]
-    )
+    recipe_rows = table.tbody.children
+    # consume title row
+    next(recipe_rows)
     
 
     recipes = {}
@@ -45,7 +44,8 @@ def find_recipes(soup: BeautifulSoup) -> dict:
 
         # rows with rowspan == 2 will have ingredient only rows
         if ing_only_row:
-            for cell in tr[1:2]:
+            print("ingredient only row")
+            for cell in tr:
                 ingredient = parse_ingredient_cell(cell)
                 if ingredient:
                     name, amount = ingredient
@@ -61,12 +61,13 @@ def find_recipes(soup: BeautifulSoup) -> dict:
             ingredients = {}
             products = {}
             building = ""
-
+            ing_only_row = False
             continue
 
         # 1st column for name
         recipe_name = tr[0].contents[0]
-        
+        print("recipe name", recipe_name)
+
         # rest of columns depend on number of ingredients
         rowspan = int(tr[0]["rowspan"])
         colspan = int(tr[1]["colspan"])
@@ -75,9 +76,12 @@ def find_recipes(soup: BeautifulSoup) -> dict:
             2 if colspan == 6 and rowspan == 1 else
             4
         )
+        print("num ingredients", num_ingredients)
+
         
         # building name
         building = str(tr[2 if num_ingredients < 2 else 3].span.a.string)
+        print("building name", building)
 
         # product columns use all but the last rows
         for cell in tr[3 if num_ingredients < 2 else 4:-1]:
@@ -109,7 +113,7 @@ def find_recipes(soup: BeautifulSoup) -> dict:
         # else there are two ingredient rows so we process
         # the next row as ingredients for the same recipe (top of loop)
         else:
-            for cell in tr[1:2]:
+            for cell in tr[1:3]:
                 ingredient = parse_ingredient_cell(cell)
                 if ingredient:
                     name, amount = ingredient

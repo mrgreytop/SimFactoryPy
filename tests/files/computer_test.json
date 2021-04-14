@@ -1,0 +1,35 @@
+{
+	"Computer": {
+		"ingredients": {
+			"Circuit Board": 10,
+			"Cable": 9,
+			"Plastic": 18,
+			"Screw": 52
+		},
+		"products": {
+			"Computer": 1
+		},
+		"building": "Manufacturer"
+	},
+	"Crystal Computer": {
+		"ingredients": {
+			"Circuit Board": 8,
+			"Crystal Oscillator": 3
+		},
+		"products": {
+			"Computer": 3
+		},
+		"building": "Assembler"
+	},
+	"Caterium Computer": {
+		"ingredients": {
+			"Circuit Board": 7,
+			"Quickwire": 28,
+			"Rubber": 12
+		},
+		"products": {
+			"Computer": 1
+		},
+		"building": "Manufacturer"
+	}
+}

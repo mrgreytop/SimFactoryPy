@@ -1,0 +1,32 @@
+{
+	"Plastic": {
+		"ingredients": {
+			"Crude Oil": 3
+		},
+		"products": {
+			"Plastic": 2,
+			"Heavy Oil Residue": 1
+		},
+		"building": "Refinery"
+	},
+	"Residual Plastic": {
+		"ingredients": {
+			"Polymer Resin": 6,
+			"Water": 2
+		},
+		"products": {
+			"Plastic": 2
+		},
+		"building": "Refinery"
+	},
+	"Recycled Plastic": {
+		"ingredients": {
+			"Rubber": 6,
+			"Fuel": 6
+		},
+		"products": {
+			"Plastic": 12
+		},
+		"building": "Refinery"
+	}
+}
