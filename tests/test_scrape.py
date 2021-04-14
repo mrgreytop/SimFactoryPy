@@ -1,16 +1,11 @@
 import unittest
-from unittest.case import expectedFailure
 from bs4 import BeautifulSoup
 import requests
 import os
-import pprint
 import sys
 import json
 sys.path.append("..")
 from SimFactoryPy.entities.wikiScraping import find_recipes
-
-def nested_dict_sort(d :dict)->dict:
-    pass
 
 class TestRecipeScrape(unittest.TestCase):
 
