@@ -1,5 +1,7 @@
+from entities import Item
 from bs4 import BeautifulSoup
 import bs4
+import requests
 
 
 def parse_ingredient_cell(cell : bs4.Tag) -> tuple:
@@ -44,7 +46,6 @@ def find_recipes(soup: BeautifulSoup) -> dict:
 
         # rows with rowspan == 2 will have ingredient only rows
         if ing_only_row:
-            print("ingredient only row")
             for cell in tr:
                 ingredient = parse_ingredient_cell(cell)
                 if ingredient:
@@ -66,7 +67,6 @@ def find_recipes(soup: BeautifulSoup) -> dict:
 
         # 1st column for name
         recipe_name = tr[0].contents[0]
-        print("recipe name", recipe_name)
 
         # rest of columns depend on number of ingredients
         rowspan = int(tr[0]["rowspan"])
@@ -76,12 +76,10 @@ def find_recipes(soup: BeautifulSoup) -> dict:
             2 if colspan == 6 and rowspan == 1 else
             4
         )
-        print("num ingredients", num_ingredients)
 
         
         # building name
         building = str(tr[2 if num_ingredients < 2 else 3].span.a.string)
-        print("building name", building)
 
         # product columns use all but the last rows
         for cell in tr[3 if num_ingredients < 2 else 4:-1]:
@@ -123,10 +121,38 @@ def find_recipes(soup: BeautifulSoup) -> dict:
     return recipes
             
 
+def find_item_details(soup: BeautifulSoup) -> Item:
+    
+    item_table = soup.find("table", class_ = "infobox-table")
+    name = item_table.tbody.tr.th.string.strip()
+    item = {
+        "name":name
+    }
 
+    item_info_rows = soup.find_all("tr", class_ = "infobox-row")
+    for row in item_info_rows:
+        key : str = (row.th.b.a or row.th.b).string
+        value : str = row.td.string
+        if key != None and value != None:
+            value = value.strip()
+            key = key.strip()
+            item[key] = value
+    
+    return Item(
+        name = item["name"],
+        stack_cap = item["Stack Size"],
+        sink_value = item["Sink Value"]
+    )
+                
+    
 
 
     
 
-
+soup = BeautifulSoup(
+    requests.get("https://satisfactory.fandom.com/wiki/Plastic").content,
+    "html.parser"
+)
+item = find_item_details(soup)
+print(repr(item))
     

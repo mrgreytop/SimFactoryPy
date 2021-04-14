@@ -1,29 +1,31 @@
 from dataclasses import dataclass
-
-@dataclass
-class Recipe():
-    name : str
-    ingredients : dict
-    products : dict
-    base_rate : float
-    building : str
+from fractions import Fraction
 
 @dataclass
 class Item():
     name : str
     stack_cap : int
+    sink_value : int
 
     def __repr__(self):
-        return f"Item({self.name}, {self.stack_cap})"
+        return f"Item({self.name}, stack:{self.stack_cap}, sink:{self.sink_value})"
 
     def __str__(self):
         return self.name
 
-class CompoundResource():
 
-    def __init__(self, name, recipes : list[Recipe]):
-        self.name =  name
-        self.recipes = recipes
+@dataclass
+class Recipe():
+    name : str
+    ingredients : dict[Item, Fraction]
+    products : dict[Item, Fraction]
+    base_rate : float
+    building : str
+
+    def __str__(self):
+        return self.name
+
+
 
     
 
