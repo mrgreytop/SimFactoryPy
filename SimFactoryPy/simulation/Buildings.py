@@ -1,7 +1,8 @@
 import simpy
 from simpy.events import AllOf
 from simpy.exceptions import Interrupt
-from .Resources import Item, MonitorContainer
+from .Resources import MonitorContainer
+from .entities.entities import Item, Recipe
 from .Logistics import ConveyorBelt
 from .Loggers import SimLoggerAdapter
 import logging
@@ -16,7 +17,7 @@ class Miner():
 
     Parameters:
         env: The simpy.Environment
-        item: A Resources.Item which is being mined
+        item: A entities.Item which is being mined
         belt: A Logistics.ConveyorBelt output, default None
     """
 
@@ -64,30 +65,34 @@ class Constructor():
         recipe: e.g {in:(Item(iron ore), 3),out:(Item(iron bar), 1)}
     """
 
-    def __init__(self, env : simpy.Environment, 
-        out_rate : float, in_belt:ConveyorBelt, recipe:dict,
-        out_belt:ConveyorBelt = None):
+    def __init__(self, env: simpy.Environment, recipe: Recipe, 
+    in_belt: ConveyorBelt, out_belt:ConveyorBelt = None):
         
         self.env = env
         self.recipe = recipe
+
+        if self.recipe.building != "Constructor":
+            raise Exception(f"Recipe requires {self.recipe.building}")
 
         self.in_belt = in_belt
         self.out_belt = out_belt
 
         self.out_stack = MonitorContainer(
-            self.env, capacity = self.recipe["out"][0][0].stack_cap,
+            self.env, capacity = self.recipe.products[0][0].stack_cap,
             parent = "Constructor Out"
         )
+
         self.in_stack = MonitorContainer(
-            self.env, capacity = self.recipe["in"][0][0].stack_cap,
+            self.env, capacity = self.recipe.ingredients[0][0].stack_cap,
             parent = "Constructor In"
         )
 
-        self.period = Fraction(self.recipe["out"][0][1],out_rate)
+        self.period = self.recipe.time_to_make / 60
         self.log = SimLoggerAdapter(
             log, {"env":self.env, "object":"Constructor"})
 
         self.env.process(self.run())
+
 
     def run(self):
         self.env.process(self.input())
@@ -96,9 +101,10 @@ class Constructor():
             yield self.allocate_inputs()
             self.log.info("producing item")
             yield self.env.timeout(self.period)
-            self.log.info("produced items")
-            yield AllOf(self.env, self.output(self.recipe["out"][0][1]))
+            self.log.info("produced item")
+            yield AllOf(self.env, self.output(self.recipe.products[0][1]))
             self.log.info("output items")
+
 
     def input(self):
         while True:
@@ -109,7 +115,7 @@ class Constructor():
 
 
     def allocate_inputs(self)->AllOf:
-        gets = [self.in_stack.get(self.recipe["in"][0][1])]
+        gets = [self.in_stack.get(self.recipe.ingredients[0][1])]
         return AllOf(self.env, gets)
 
 
@@ -119,7 +125,7 @@ class Constructor():
             for _ in range(amount):
                 if len(self.out_belt.store.items) < self.out_belt.store.capacity:
                     puts.append(
-                        self.out_belt.put(self.recipe["out"][0][0])
+                        self.out_belt.put(self.recipe.products[0][0])
                     )
                 else:
                     break
