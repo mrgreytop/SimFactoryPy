@@ -1,35 +1,6 @@
-from fractions import Fraction
 import simpy
-from simpy.rt import RealtimeEnvironment
-
-class Item():
-    def __init__(self, name, stack_cap):
-        self.name = name
-        self.stack_cap = stack_cap
-
-    def __repr__(self):
-        return f"Item({self.name}, {self.stack_cap})"
-
-    def __str__(self):
-        return self.name
-
-    def __hash__(self):
-        return hash((self.name, self.stack_cap))
-
-    def __eq__(self, other):
-        return hash(self) == hash(other)
-
-
-def Recipe(recipe_dict):
-    recipe_dict["out"] = [
-        (item,Fraction(ratio))
-        for item, ratio in recipe_dict["out"]
-    ]
-    recipe_dict["in"] = [
-        (item,Fraction(ratio))
-        for item,ratio in recipe_dict["in"]
-    ]
-    return recipe_dict
+from simpy.resources.store import StoreGet
+from typing import Optional
 
 
 class MonitorContainer(simpy.Container):
@@ -72,6 +43,14 @@ class MonitorContainer(simpy.Container):
         getEvent.callbacks.insert(0, monitor_callback)
 
         return getEvent
+
+
+class LifoFilterStore(simpy.FilterStore):
+
+    def _do_get(self, event: StoreGet) -> Optional[bool]:
+        if self.items:
+            event.succeed(self.items.pop())
+        return None
 
 
 class MonitorStore(simpy.Store):
