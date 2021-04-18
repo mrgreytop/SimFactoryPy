@@ -1,4 +1,6 @@
 import simpy
+from simpy.resources.store import StoreGet
+from typing import Optional
 
 
 class MonitorContainer(simpy.Container):
@@ -41,6 +43,14 @@ class MonitorContainer(simpy.Container):
         getEvent.callbacks.insert(0, monitor_callback)
 
         return getEvent
+
+
+class LifoFilterStore(simpy.FilterStore):
+
+    def _do_get(self, event: StoreGet) -> Optional[bool]:
+        if self.items:
+            event.succeed(self.items.pop())
+        return None
 
 
 class MonitorStore(simpy.Store):
